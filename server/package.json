@@ -1,0 +1,15 @@
+{
+  "name": "dairyfeed-ai-server",
+  "version": "1.0.0",
+  "description": "Backend API & IoT Telemetry Hub for Smart Feed & Silage Quality Analyzer (SIH 26111)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "ws": "^8.18.0"
+  }
+}
