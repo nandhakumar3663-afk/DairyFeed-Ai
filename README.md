@@ -1,8 +1,8 @@
 
 # 🌱 SMART FEED & SILAGE QUALITY ANALYZER
-### Problem Statement: SIH 26111 | Smart AI-Enabled Rapid Feed and Silage Quality Testing System for Dairy Farmers
-**Ministry:** Ministry of Fisheries, Animal Husbandry & Dairying  
-**Theme:** Agriculture, FoodTech & Rural Development | **Category:** Software / Hardware-Ready
+### Smart AI-Enabled Rapid Feed and Silage Quality Testing System for Dairy Farmers
+**Domain:** Precision Dairy Nutrition & Quality Assurance  
+**Category:** Production AI + IoT Multi-Sensor Platform
 
 ---
 

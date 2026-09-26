@@ -1,7 +1,7 @@
 {
   "name": "dairyfeed-ai-suite",
   "version": "1.0.0",
-  "description": "Smart Feed & Silage Quality Analyzer - AI & IoT Precision Dairy Nutrition Platform (SIH 26111)",
+  "description": "Smart Feed & Silage Quality Analyzer - AI & IoT Precision Dairy Nutrition Platform",
   "scripts": {
     "start": "node server/server.js",
     "server": "node server/server.js",
@@ -10,7 +10,7 @@
     "build": "npm --prefix client run build"
   },
   "keywords": [
-    "sih26111",
+    "dairy-nutrition",
     "silage-quality",
     "precision-dairy",
     "iot-esp32",
