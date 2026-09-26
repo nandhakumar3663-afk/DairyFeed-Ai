@@ -15,12 +15,23 @@ import { AlertTriangle, X } from 'lucide-react';
 
 export default function App() {
   const [lang, setLang] = useState('en');
+  // Default to light green theme as requested by user
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem('dfa_theme') || 'light';
+  });
+  const [farmerMode, setFarmerMode] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const [isLiveMode, setIsLiveMode] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isCertOpen, setIsCertOpen] = useState(false);
   const [selectedPitId, setSelectedPitId] = useState('pit-a');
   const [alertNotice, setAlertNotice] = useState(null);
+
+  // Sync theme with document attribute & localStorage
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('dfa_theme', theme);
+  }, [theme]);
 
   // Default fallback pits
   const defaultPits = [
@@ -154,7 +165,7 @@ export default function App() {
 
     silageService.initWebSocket(handleWsMessage);
 
-    // Fallback timer if WebSocket or server is dormant
+    // Fallback ticker if WebSocket or server is dormant
     const fallbackTicker = setInterval(() => {
       if (!silageService.isConnected) {
         setAllPits(prevPits => 
@@ -245,10 +256,14 @@ export default function App() {
 
   return (
     <div>
-      {/* Navigation Header */}
+      {/* Navigation Header with Theme & Farmer Mode toggles */}
       <Navbar
         lang={lang}
         setLang={setLang}
+        theme={theme}
+        setTheme={setTheme}
+        farmerMode={farmerMode}
+        setFarmerMode={setFarmerMode}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         isLiveMode={isLiveMode}
@@ -268,7 +283,7 @@ export default function App() {
         }}>
           <div style={{
             background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.25) 0%, rgba(185, 28, 28, 0.25) 100%)',
-            border: '1px solid rgba(239, 68, 68, 0.5)',
+            border: '2px solid rgba(239, 68, 68, 0.6)',
             borderRadius: '12px',
             padding: '0.85rem 1.25rem',
             display: 'flex',
@@ -277,15 +292,15 @@ export default function App() {
             boxShadow: '0 0 20px rgba(239, 68, 68, 0.2)'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <AlertTriangle size={22} color="#f87171" />
+              <AlertTriangle size={22} color="#dc2626" />
               <div>
-                <strong style={{ color: '#fff', fontSize: '0.9rem' }}>{alertNotice.title}</strong>
-                <p style={{ color: '#fca5a5', fontSize: '0.8rem', margin: 0 }}>{alertNotice.message}</p>
+                <strong style={{ color: '#991b1b', fontSize: '0.92rem' }}>{alertNotice.title}</strong>
+                <p style={{ color: '#b91c1c', fontSize: '0.84rem', margin: 0, fontWeight: 600 }}>{alertNotice.message}</p>
               </div>
             </div>
             <button 
               onClick={() => setAlertNotice(null)}
-              style={{ background: 'transparent', border: 'none', color: '#fca5a5', cursor: 'pointer', padding: '0.25rem' }}
+              style={{ background: 'transparent', border: 'none', color: '#b91c1c', cursor: 'pointer', padding: '0.25rem' }}
             >
               <X size={18} />
             </button>
@@ -305,6 +320,7 @@ export default function App() {
             history={history}
             onTriggerAnomaly={handleTriggerAnomaly}
             isLiveMode={isLiveMode}
+            farmerMode={farmerMode}
           />
         )}
 

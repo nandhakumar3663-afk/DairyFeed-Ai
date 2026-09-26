@@ -1,7 +1,7 @@
 /*
  * ===================================================================================
  *  SMART FEED & SILAGE QUALITY ANALYZER - ESP32 FIRMWARE NODE
- *  Problem Statement: SIH 26111 (Ministry of Fisheries, Animal Husbandry & Dairying)
+ *  Ministry of Fisheries, Animal Husbandry & Dairying • Precision Dairy Platform
  * ===================================================================================
  *  Hardware Connections:
  *  - ESP32 NodeMCU-32S / ESP32-WROOM

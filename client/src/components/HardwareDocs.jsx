@@ -25,7 +25,7 @@ export default function HardwareDocs({ lang, onHardwarePacketSent }) {
 
   const sampleArduinoCode = `/*
  * SMART FEED & SILAGE QUALITY ANALYZER - ESP32 FIRMWARE NODE
- * Problem Statement: SIH 26111 (Ministry of Fisheries, Animal Husbandry & Dairying)
+ * Ministry of Fisheries, Animal Husbandry & Dairying • Precision Dairy Platform
  */
 
 #include <WiFi.h>
@@ -134,7 +134,7 @@ void loop() {
             </p>
           </div>
           <span className="sih-badge" style={{ background: 'rgba(16, 185, 129, 0.2)', color: 'var(--accent-emerald-light)' }}>
-            SIH 26111 HARDWARE-READY
+            PRODUCTION HARDWARE-READY
           </span>
         </div>
       </div>

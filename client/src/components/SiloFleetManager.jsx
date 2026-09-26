@@ -26,7 +26,7 @@ export default function SiloFleetManager({ lang, allPits, selectedPitId, setSele
       feedOutRateCmDay: 22,
       phase: 'Active Feed-Out',
       status: 'Prime Fermentation',
-      healthColor: 'var(--accent-emerald-light)'
+      healthColor: 'var(--accent-emerald)'
     },
     {
       id: 'pit-b',
@@ -54,7 +54,7 @@ export default function SiloFleetManager({ lang, allPits, selectedPitId, setSele
       feedOutRateCmDay: 30,
       phase: 'Stable Anaerobic',
       status: 'Optimal Bale Seal',
-      healthColor: 'var(--accent-emerald-light)'
+      healthColor: 'var(--accent-emerald)'
     },
     {
       id: 'tmr-01',
@@ -81,11 +81,11 @@ export default function SiloFleetManager({ lang, allPits, selectedPitId, setSele
             <h2 className="chart-title" style={{ fontSize: '1.35rem' }}>
               Dairy Farm Silo & Bunker Fleet Management
             </h2>
-            <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>
               Real-time monitoring of all farm storage structures, compaction densities, and feed-out face advance rates
             </p>
           </div>
-          <span className="sih-badge" style={{ background: 'rgba(16, 185, 129, 0.2)', color: 'var(--accent-emerald-light)' }}>
+          <span className="sih-badge" style={{ background: 'rgba(16, 185, 129, 0.2)', color: 'var(--accent-emerald)' }}>
             4 ACTIVE STORAGE SITES
           </span>
         </div>
@@ -104,19 +104,19 @@ export default function SiloFleetManager({ lang, allPits, selectedPitId, setSele
               style={{
                 padding: '1.5rem',
                 border: isSelected ? '2px solid var(--accent-emerald)' : '1px solid var(--border-subtle)',
-                background: isSelected ? 'rgba(16, 185, 129, 0.05)' : 'var(--bg-card)',
+                background: isSelected ? 'rgba(16, 185, 129, 0.08)' : 'var(--bg-card)',
                 cursor: 'pointer'
               }}
               onClick={() => setSelectedPitId(silo.id)}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
                 <div>
-                  <h3 style={{ color: '#fff', fontSize: '1.05rem', fontWeight: 700 }}>{silo.name}</h3>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{silo.type}</span>
+                  <h3 style={{ color: 'var(--text-heading)', fontSize: '1.1rem', fontWeight: 800 }}>{silo.name}</h3>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>{silo.type}</span>
                 </div>
                 <span 
                   className="status-badge-inline" 
-                  style={{ color: silo.healthColor, fontSize: '0.75rem', background: 'rgba(255,255,255,0.06)', padding: '0.2rem 0.5rem', borderRadius: '4px' }}
+                  style={{ color: silo.healthColor, fontSize: '0.75rem', background: 'var(--bg-sub-card)', border: '1px solid var(--border-subtle)', padding: '0.2rem 0.6rem', borderRadius: '4px' }}
                 >
                   {silo.phase}
                 </span>
@@ -124,33 +124,33 @@ export default function SiloFleetManager({ lang, allPits, selectedPitId, setSele
 
               {/* Progress capacity bar */}
               <div style={{ margin: '1rem 0' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
-                  <span>Remaining Inventory:</span>
-                  <strong style={{ color: '#fff' }}>{silo.currentTons} / {silo.capacityTons} Tons ({tonnagePct}%)</strong>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '0.35rem', fontWeight: 700 }}>
+                  <span>Remaining Feed Stock:</span>
+                  <strong style={{ color: 'var(--text-heading)' }}>{silo.currentTons} / {silo.capacityTons} Tons ({tonnagePct}%)</strong>
                 </div>
-                <div className="nir-track" style={{ height: '8px' }}>
+                <div className="nir-track" style={{ height: '9px' }}>
                   <div className="nir-fill" style={{ width: `${tonnagePct}%`, background: isSelected ? 'var(--accent-emerald)' : 'var(--accent-cyan)' }}></div>
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.65rem', fontSize: '0.78rem', background: '#1e293b', padding: '0.85rem', borderRadius: '8px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.65rem', fontSize: '0.82rem', background: 'var(--bg-sub-card)', border: '1px solid var(--border-subtle)', padding: '0.85rem', borderRadius: '8px' }}>
                 <div>
-                  <span style={{ color: 'var(--text-muted)' }}>Ensiled Days:</span>
-                  <div style={{ fontWeight: 700, color: '#fff' }}>{silo.daysEnsiled} Days</div>
+                  <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>Ensiled Days:</span>
+                  <div style={{ fontWeight: 800, color: 'var(--text-heading)' }}>{silo.daysEnsiled} Days</div>
                 </div>
                 <div>
-                  <span style={{ color: 'var(--text-muted)' }}>Compaction Density:</span>
-                  <div style={{ fontWeight: 700, color: 'var(--accent-emerald-light)' }}>{silo.densityKgM3} kg/m³</div>
+                  <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>Packing Density:</span>
+                  <div style={{ fontWeight: 800, color: 'var(--accent-emerald)' }}>{silo.densityKgM3} kg/m³</div>
                 </div>
                 <div>
-                  <span style={{ color: 'var(--text-muted)' }}>Face Feed-out:</span>
-                  <div style={{ fontWeight: 700, color: silo.feedOutRateCmDay < 20 ? 'var(--accent-amber)' : '#fff' }}>
+                  <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>Daily Removal:</span>
+                  <div style={{ fontWeight: 800, color: silo.feedOutRateCmDay < 20 ? 'var(--accent-amber)' : 'var(--text-heading)' }}>
                     {silo.feedOutRateCmDay} cm/day
                   </div>
                 </div>
                 <div>
-                  <span style={{ color: 'var(--text-muted)' }}>Fermentation Status:</span>
-                  <div style={{ fontWeight: 700, color: silo.healthColor }}>{silo.status}</div>
+                  <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>Fermentation Status:</span>
+                  <div style={{ fontWeight: 800, color: silo.healthColor }}>{silo.status}</div>
                 </div>
               </div>
 
@@ -159,15 +159,15 @@ export default function SiloFleetManager({ lang, allPits, selectedPitId, setSele
                   style={{
                     background: isSelected ? 'var(--accent-emerald)' : 'transparent',
                     border: isSelected ? 'none' : '1px solid var(--border-subtle)',
-                    color: isSelected ? '#042f2e' : 'var(--text-muted)',
-                    padding: '0.4rem 0.85rem',
+                    color: isSelected ? '#ffffff' : 'var(--text-muted)',
+                    padding: '0.45rem 0.95rem',
                     borderRadius: '6px',
-                    fontSize: '0.78rem',
-                    fontWeight: 700,
+                    fontSize: '0.82rem',
+                    fontWeight: 800,
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '0.3rem'
+                    gap: '0.35rem'
                   }}
                 >
                   <span>{isSelected ? 'Currently Monitored' : 'Select Probe Stream'}</span>

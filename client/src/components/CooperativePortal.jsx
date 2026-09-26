@@ -35,12 +35,12 @@ export default function CooperativePortal({ lang }) {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-              <Building2 size={22} color="var(--accent-emerald-light)" />
+              <Building2 size={22} color="var(--accent-emerald)" />
               <h2 className="chart-title" style={{ fontSize: '1.35rem' }}>
                 District Dairy Cooperative Union & NDDB Portal
               </h2>
             </div>
-            <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>
               Village Milk Producers Cooperative Societies (MPCS) silage quality indexing and milk procurement incentive disbursement
             </p>
           </div>
@@ -56,28 +56,28 @@ export default function CooperativePortal({ lang }) {
 
         {/* Cooperative KPI Cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginTop: '1.5rem' }}>
-          <div className="glass-panel" style={{ padding: '1.25rem', background: '#1e293b' }}>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Monitored Dairy Farmers</span>
-            <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#fff', marginTop: '0.25rem' }}>1,280+</div>
-            <span style={{ fontSize: '0.75rem', color: 'var(--accent-emerald-light)' }}>↑ 24% enrollment this season</span>
+          <div className="glass-panel" style={{ padding: '1.25rem', background: 'var(--bg-sub-card)' }}>
+            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>Monitored Dairy Farmers</span>
+            <div style={{ fontSize: '1.9rem', fontWeight: 800, color: 'var(--text-heading)', marginTop: '0.25rem' }}>1,280+</div>
+            <span style={{ fontSize: '0.78rem', color: 'var(--accent-emerald)', fontWeight: 700 }}>↑ 24% enrollment this season</span>
           </div>
 
-          <div className="glass-panel" style={{ padding: '1.25rem', background: '#1e293b' }}>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Avg Silage Flieg Score</span>
-            <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--accent-emerald-light)', marginTop: '0.25rem' }}>84.2</div>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>Grade: Very Good</span>
+          <div className="glass-panel" style={{ padding: '1.25rem', background: 'var(--bg-sub-card)' }}>
+            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>Avg Silage Quality Score</span>
+            <div style={{ fontSize: '1.9rem', fontWeight: 800, color: 'var(--accent-emerald)', marginTop: '0.25rem' }}>84.2</div>
+            <span style={{ fontSize: '0.78rem', color: 'var(--text-dim)', fontWeight: 600 }}>Grade: Very Good</span>
           </div>
 
-          <div className="glass-panel" style={{ padding: '1.25rem', background: '#1e293b' }}>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Total Milk Yield Improvement</span>
-            <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--accent-cyan)', marginTop: '0.25rem' }}>+18.4%</div>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>Avg +2.2 L/cow/day</span>
+          <div className="glass-panel" style={{ padding: '1.25rem', background: 'var(--bg-sub-card)' }}>
+            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>Village Milk Yield Boost</span>
+            <div style={{ fontSize: '1.9rem', fontWeight: 800, color: 'var(--accent-cyan)', marginTop: '0.25rem' }}>+18.4%</div>
+            <span style={{ fontSize: '0.78rem', color: 'var(--text-dim)', fontWeight: 600 }}>Avg +2.2 L/cow/day</span>
           </div>
 
-          <div className="glass-panel" style={{ padding: '1.25rem', background: '#1e293b' }}>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Quality Bonus Disbursed</span>
-            <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--accent-amber)', marginTop: '0.25rem' }}>₹4.82 Lakh</div>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>Direct DB-Transfer to Farmers</span>
+          <div className="glass-panel" style={{ padding: '1.25rem', background: 'var(--bg-sub-card)' }}>
+            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>Quality Bonus Disbursed</span>
+            <div style={{ fontSize: '1.9rem', fontWeight: 800, color: 'var(--accent-amber)', marginTop: '0.25rem' }}>₹4.82 Lakh</div>
+            <span style={{ fontSize: '0.78rem', color: 'var(--text-dim)', fontWeight: 600 }}>Direct DB-Transfer to Farmers</span>
           </div>
         </div>
       </div>
@@ -89,55 +89,57 @@ export default function CooperativePortal({ lang }) {
         </h3>
 
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.88rem' }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid var(--border-subtle)', color: 'var(--text-muted)', textAlign: 'left' }}>
+              <tr style={{ borderBottom: '2px solid var(--border-subtle)', color: 'var(--text-muted)', textAlign: 'left' }}>
                 <th style={{ padding: '0.75rem 0.5rem' }}>Rank</th>
                 <th style={{ padding: '0.75rem' }}>Farmer Name</th>
                 <th style={{ padding: '0.75rem' }}>Village / Society</th>
                 <th style={{ padding: '0.75rem' }}>Dairy Herd</th>
-                <th style={{ padding: '0.75rem' }}>Flieg Score</th>
+                <th style={{ padding: '0.75rem' }}>Quality Score</th>
                 <th style={{ padding: '0.75rem' }}>Crude Protein</th>
-                <th style={{ padding: '0.75rem' }}>Procurement Bonus</th>
+                <th style={{ padding: '0.75rem' }}>Milk Bonus</th>
                 <th style={{ padding: '0.75rem' }}>Status</th>
               </tr>
             </thead>
             <tbody>
               {farmers.map((farmer) => (
-                <tr key={farmer.rank} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                <tr key={farmer.rank} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
                   <td style={{ padding: '0.85rem 0.5rem' }}>
                     <span style={{ 
-                      width: '24px', 
-                      height: '24px', 
+                      width: '26px', 
+                      height: '26px', 
                       borderRadius: '50%', 
-                      background: farmer.rank <= 3 ? 'var(--accent-emerald)' : '#334155',
-                      color: farmer.rank <= 3 ? '#042f2e' : '#fff',
+                      background: farmer.rank <= 3 ? 'var(--accent-emerald)' : 'var(--bg-sub-card)',
+                      color: farmer.rank <= 3 ? '#ffffff' : 'var(--text-main)',
+                      border: '1px solid var(--border-subtle)',
                       display: 'inline-flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      fontWeight: 700,
-                      fontSize: '0.75rem'
+                      fontWeight: 800,
+                      fontSize: '0.78rem'
                     }}>
                       {farmer.rank}
                     </span>
                   </td>
-                  <td style={{ padding: '0.85rem', fontWeight: 600, color: '#fff' }}>{farmer.name}</td>
-                  <td style={{ padding: '0.85rem', color: 'var(--text-muted)' }}>{farmer.village}</td>
-                  <td style={{ padding: '0.85rem', color: '#fff' }}>{farmer.cows} Cows</td>
+                  <td style={{ padding: '0.85rem', fontWeight: 700, color: 'var(--text-heading)' }}>{farmer.name}</td>
+                  <td style={{ padding: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>{farmer.village}</td>
+                  <td style={{ padding: '0.85rem', color: 'var(--text-main)', fontWeight: 700 }}>{farmer.cows} Cows</td>
                   <td style={{ padding: '0.85rem' }}>
-                    <strong style={{ color: farmer.flieg >= 80 ? 'var(--accent-emerald-light)' : farmer.flieg >= 60 ? 'var(--accent-amber)' : '#ef4444' }}>
+                    <strong style={{ color: farmer.flieg >= 80 ? 'var(--accent-emerald)' : farmer.flieg >= 60 ? 'var(--accent-amber)' : '#ef4444' }}>
                       {farmer.flieg} / 100
                     </strong>
                   </td>
-                  <td style={{ padding: '0.85rem', color: 'var(--accent-cyan)' }}>{farmer.cp}</td>
-                  <td style={{ padding: '0.85rem', fontWeight: 700, color: 'var(--accent-emerald-light)' }}>{farmer.bonus}</td>
+                  <td style={{ padding: '0.85rem', color: 'var(--accent-cyan)', fontWeight: 700 }}>{farmer.cp}</td>
+                  <td style={{ padding: '0.85rem', fontWeight: 800, color: 'var(--accent-emerald)' }}>{farmer.bonus}</td>
                   <td style={{ padding: '0.85rem' }}>
                     <span style={{ 
-                      fontSize: '0.72rem', 
-                      padding: '0.2rem 0.5rem', 
+                      fontSize: '0.75rem', 
+                      fontWeight: 700,
+                      padding: '0.25rem 0.6rem', 
                       borderRadius: '4px',
-                      background: farmer.status.includes('Gold') ? 'rgba(16, 185, 129, 0.2)' : farmer.status.includes('Silver') ? 'rgba(6, 182, 212, 0.2)' : 'rgba(239, 68, 68, 0.2)',
-                      color: farmer.status.includes('Gold') ? 'var(--accent-emerald-light)' : farmer.status.includes('Silver') ? 'var(--accent-cyan)' : '#fca5a5'
+                      background: farmer.status.includes('Gold') ? 'rgba(16, 185, 129, 0.15)' : farmer.status.includes('Silver') ? 'rgba(6, 182, 212, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                      color: farmer.status.includes('Gold') ? 'var(--accent-emerald)' : farmer.status.includes('Silver') ? 'var(--accent-cyan)' : '#dc2626'
                     }}>
                       {farmer.status}
                     </span>

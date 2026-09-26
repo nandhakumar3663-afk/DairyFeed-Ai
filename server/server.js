@@ -1,6 +1,6 @@
 /**
  * Smart Feed & Silage Quality Analyzer - Backend Gateway & AI Server
- * SIH 26111: Ministry of Fisheries, Animal Husbandry & Dairying
+ * Ministry of Fisheries, Animal Husbandry & Dairying • Precision Cattle Nutrition
  */
 
 const express = require('express');
@@ -89,7 +89,7 @@ app.get('/api/v1/health', (req, res) => {
   res.json({
     status: 'healthy',
     system: 'Smart Feed & Silage Quality Analyzer',
-    sihCode: 'SIH26111',
+    platformVersion: '1.0.0-PROD',
     timestamp: new Date().toISOString(),
     connectedClients: clients.size
   });
@@ -200,16 +200,16 @@ app.get('/api/v1/config/firebase', (req, res) => {
   res.json({
     platform: 'SmartFeed AI Cloud Gateway',
     firebase: {
-      authDomain: 'dairyfeed-ai-sih26111.firebaseapp.com',
-      databaseURL: 'https://dairyfeed-ai-sih26111-default-rtdb.asia-southeast1.firebasedatabase.app',
-      projectId: 'dairyfeed-ai-sih26111',
-      storageBucket: 'dairyfeed-ai-sih26111.appspot.com',
+      authDomain: 'dairyfeed-ai-gateway.firebaseapp.com',
+      databaseURL: 'https://dairyfeed-ai-gateway-default-rtdb.asia-southeast1.firebasedatabase.app',
+      projectId: 'dairyfeed-ai-gateway',
+      storageBucket: 'dairyfeed-ai-gateway.appspot.com',
       realtimePath: '/telemetry/esp32_nodes/{deviceId}'
     },
     mqtt: {
       broker: 'broker.emqx.io (or private AWS/HiveMQ broker)',
       port: 8883,
-      topicTemplate: 'dairy/sih26111/farms/{farmId}/silos/{pitId}/telemetry',
+      topicTemplate: 'dairy/telemetry/farms/{farmId}/silos/{pitId}',
       qos: 1
     },
     supportedSensors: [
@@ -224,7 +224,7 @@ app.get('/api/v1/config/firebase', (req, res) => {
 
 server.listen(PORT, () => {
   console.log(`\n=====================================================`);
-  console.log(`🚀 Smart Feed & Silage Quality Analyzer Backend (SIH 26111)`);
+  console.log(`🚀 Smart Feed & Silage Quality Analyzer Backend (Production)`);
   console.log(`📡 HTTP Server listening on http://localhost:${PORT}`);
   console.log(`⚡ WebSocket Server active on ws://localhost:${PORT}`);
   console.log(`=====================================================\n`);

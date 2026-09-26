@@ -13,7 +13,11 @@ import {
   ShieldCheck,
   Camera,
   Scale,
-  Users
+  Users,
+  Sun,
+  Moon,
+  Sprout,
+  FlaskConical
 } from 'lucide-react';
 import { TRANSLATIONS } from '../translations';
 import { audioService } from '../services/audioSpeech';
@@ -21,6 +25,10 @@ import { audioService } from '../services/audioSpeech';
 export default function Navbar({
   lang,
   setLang,
+  theme,
+  setTheme,
+  farmerMode,
+  setFarmerMode,
   activeTab,
   setActiveTab,
   isLiveMode,
@@ -66,7 +74,7 @@ export default function Navbar({
           <div>
             <div className="brand-title">
               {t.appTitle}
-              <span className="sih-badge">SIH 26111</span>
+              <span className="sih-badge">LIVE AI + IoT</span>
             </div>
             <span className="brand-subtitle">{t.subTitle}</span>
           </div>
@@ -74,6 +82,35 @@ export default function Navbar({
 
         {/* Global Action Tools */}
         <div className="header-actions">
+          {/* Light / Dark Mode Switcher */}
+          <button 
+            className="btn-theme-toggle"
+            onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+            title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Green Mode'}
+          >
+            {theme === 'light' ? (
+              <>
+                <Moon size={16} color="var(--accent-emerald)" />
+                <span>{t.themeDark}</span>
+              </>
+            ) : (
+              <>
+                <Sun size={16} color="#fbbf24" />
+                <span>{t.themeLight}</span>
+              </>
+            )}
+          </button>
+
+          {/* Farmer Friendly Simple View vs Lab Expert View */}
+          <button 
+            className={`btn-farmer-toggle ${farmerMode ? 'active' : ''}`}
+            onClick={() => setFarmerMode(!farmerMode)}
+            title="Toggle Farmer Friendly Simplified View"
+          >
+            {farmerMode ? <Sprout size={16} /> : <FlaskConical size={16} />}
+            <span>{farmerMode ? t.farmerModeTitle : t.expertModeTitle}</span>
+          </button>
+
           {/* Live ESP32 vs Simulation Mode Toggle */}
           <button 
             className="mode-toggle-pill"
@@ -113,10 +150,14 @@ export default function Navbar({
           {/* Lab Certificate Modal Trigger */}
           <button 
             className="btn-voice"
-            style={{ background: 'rgba(30, 41, 59, 0.8)', borderColor: 'rgba(255, 255, 255, 0.15)', color: '#fff' }}
+            style={{ 
+              background: 'var(--bg-sub-card)', 
+              borderColor: 'var(--border-subtle)', 
+              color: 'var(--text-main)' 
+            }}
             onClick={onOpenCertificate}
           >
-            <FileText size={16} color="var(--accent-emerald-light)" />
+            <FileText size={16} color="var(--accent-emerald)" />
             <span>{t.exportCertificate}</span>
           </button>
         </div>
@@ -133,7 +174,7 @@ export default function Navbar({
               className={`nav-tab-btn ${isActive ? 'active' : ''}`}
               onClick={() => setActiveTab(item.id)}
             >
-              <Icon size={16} color={isActive ? 'var(--accent-emerald-light)' : 'var(--text-muted)'} />
+              <Icon size={16} />
               <span>{item.label}</span>
             </button>
           );
