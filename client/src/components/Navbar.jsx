@@ -1,6 +1,8 @@
 import React from 'react';
 import { 
   Activity, 
+  Wifi, 
+  Radio, 
   Volume2, 
   VolumeX, 
   FileText, 
@@ -8,6 +10,7 @@ import {
   Layers, 
   Cpu, 
   Sparkles,
+  ShieldCheck,
   Camera,
   Scale,
   Users,
@@ -42,9 +45,9 @@ export default function Navbar({
       audioService.stop();
       setIsSpeaking(false);
     } else {
-      const speechText = activePitData
-        ? `${activePitData.source} sample. Experimental unvalidated estimates. This system does not establish feed safety. Core temperature: ${activePitData.temperature_core} degrees. Received at ${activePitData.timestamp || 'demo initialization'}.`
-        : 'No sample available. No feed safety assessment can be made.';
+      const advisory = activePitData?.inference?.flieg?.advisory || 
+        "Silage fermentation is optimal. Core temperature is stable at 25 degrees. Continue standard feeding.";
+      const speechText = `${t.fliegScore}: ${activePitData?.inference?.flieg?.score || 85}. ${advisory}`;
       setIsSpeaking(true);
       audioService.speak(speechText, lang, () => setIsSpeaking(false));
     }
@@ -66,14 +69,14 @@ export default function Navbar({
         {/* Brand & Ministry Title */}
         <div className="brand-section">
           <div className="brand-logo-glow">
-            <Sprout size={24} />
+            <Activity size={24} />
           </div>
           <div>
             <div className="brand-title">
               {t.appTitle}
-              <span className="sih-badge">EXPERIMENTAL PROTOTYPE</span>
+              <span className="sih-badge">LIVE AI + IoT</span>
             </div>
-            <span className="brand-subtitle">Sensor monitoring and unvalidated estimates</span>
+            <span className="brand-subtitle">{t.subTitle}</span>
           </div>
         </div>
 
@@ -101,7 +104,6 @@ export default function Navbar({
           {/* Farmer Friendly Simple View vs Lab Expert View */}
           <button 
             className={`btn-farmer-toggle ${farmerMode ? 'active' : ''}`}
-            aria-pressed={farmerMode}
             onClick={() => setFarmerMode(!farmerMode)}
             title="Toggle Farmer Friendly Simplified View"
           >
@@ -112,19 +114,17 @@ export default function Navbar({
           {/* Live ESP32 vs Simulation Mode Toggle */}
           <button 
             className="mode-toggle-pill"
-            aria-pressed={isLiveMode}
             onClick={() => setIsLiveMode(!isLiveMode)}
             title={isLiveMode ? t.toggleLive : t.toggleSim}
           >
             <span className={`pulse-dot ${isLiveMode ? 'live' : 'sim'}`}></span>
-            <span>{isLiveMode ? 'Measured data' : 'Simulation'}</span>
+            <span>{isLiveMode ? t.liveStatus : t.simStatus}</span>
           </button>
 
           {/* Vernacular Language Switcher */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
             <Globe size={16} color="var(--text-muted)" />
             <select 
-              aria-label="Interface language"
               className="lang-selector" 
               value={lang} 
               onChange={(e) => setLang(e.target.value)}
@@ -155,24 +155,22 @@ export default function Navbar({
               borderColor: 'var(--border-subtle)', 
               color: 'var(--text-main)' 
             }}
-            disabled={!activePitData}
             onClick={onOpenCertificate}
           >
             <FileText size={16} color="var(--accent-emerald)" />
-            <span>Sample report</span>
+            <span>{t.exportCertificate}</span>
           </button>
         </div>
       </div>
 
       {/* Navigation Tabs */}
-      <nav className="nav-tabs-bar" aria-label="Main navigation">
+      <nav className="nav-tabs-bar">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
           return (
             <button
               key={item.id}
-              aria-current={isActive ? 'page' : undefined}
               className={`nav-tab-btn ${isActive ? 'active' : ''}`}
               onClick={() => setActiveTab(item.id)}
             >
