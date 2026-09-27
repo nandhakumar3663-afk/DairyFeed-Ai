@@ -1,8 +1,6 @@
 import React from 'react';
 import { 
   Activity, 
-  Wifi, 
-  Radio, 
   Volume2, 
   VolumeX, 
   FileText, 
@@ -10,7 +8,6 @@ import {
   Layers, 
   Cpu, 
   Sparkles,
-  ShieldCheck,
   Camera,
   Scale,
   Users,
@@ -45,9 +42,9 @@ export default function Navbar({
       audioService.stop();
       setIsSpeaking(false);
     } else {
-      const advisory = activePitData?.inference?.flieg?.advisory || 
-        "Silage fermentation is optimal. Core temperature is stable at 25 degrees. Continue standard feeding.";
-      const speechText = `${t.fliegScore}: ${activePitData?.inference?.flieg?.score || 85}. ${advisory}`;
+      const speechText = activePitData
+        ? `${activePitData.source} sample. Experimental unvalidated estimates. This system does not establish feed safety. Core temperature: ${activePitData.temperature_core} degrees. Received at ${activePitData.timestamp || 'demo initialization'}.`
+        : 'No sample available. No feed safety assessment can be made.';
       setIsSpeaking(true);
       audioService.speak(speechText, lang, () => setIsSpeaking(false));
     }
@@ -74,9 +71,9 @@ export default function Navbar({
           <div>
             <div className="brand-title">
               {t.appTitle}
-              <span className="sih-badge">LIVE AI + IoT</span>
+              <span className="sih-badge">EXPERIMENTAL PROTOTYPE</span>
             </div>
-            <span className="brand-subtitle">{t.subTitle}</span>
+            <span className="brand-subtitle">Sensor monitoring and unvalidated estimates</span>
           </div>
         </div>
 
@@ -118,7 +115,7 @@ export default function Navbar({
             title={isLiveMode ? t.toggleLive : t.toggleSim}
           >
             <span className={`pulse-dot ${isLiveMode ? 'live' : 'sim'}`}></span>
-            <span>{isLiveMode ? t.liveStatus : t.simStatus}</span>
+            <span>{isLiveMode ? 'Measured data' : 'Simulation'}</span>
           </button>
 
           {/* Vernacular Language Switcher */}
@@ -158,7 +155,7 @@ export default function Navbar({
             onClick={onOpenCertificate}
           >
             <FileText size={16} color="var(--accent-emerald)" />
-            <span>{t.exportCertificate}</span>
+            <span>Sample report</span>
           </button>
         </div>
       </div>

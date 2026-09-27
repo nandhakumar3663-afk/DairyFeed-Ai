@@ -7,7 +7,9 @@
     "server": "node server/server.js",
     "client": "npm --prefix client run dev",
     "dev": "node dev-runner.js",
-    "build": "npm --prefix client run build"
+    "build": "npm --prefix client run build",
+    "test": "npm run build && npm --prefix server test",
+    "check": "npm --prefix client run lint && npm test"
   },
   "keywords": [
     "dairy-nutrition",
@@ -18,5 +20,8 @@
     "flieg-score"
   ],
   "author": "Smart Dairy AI Team",
-  "license": "MIT"
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.22.1"
+  }
 }

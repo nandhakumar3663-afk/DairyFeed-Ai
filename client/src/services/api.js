@@ -1,154 +1,63 @@
-/**
- * Client API & WebSocket Real-time Ingestion Service
- * Connects to ESP32 Gateway Server with resilient auto-reconnect and client-side fallback.
- */
-
-const API_BASE = window.location.port === '3000' ? 'http://localhost:5001/api/v1' : '/api/v1';
-const WS_BASE = window.location.port === '3000' ? 'ws://localhost:5001' : `ws://${window.location.host}`;
-
-class SilageDataService {
-  constructor() {
-    this.ws = null;
-    this.subscribers = new Set();
-    this.isConnected = false;
-    this.reconnectTimer = null;
-  }
-
-  initWebSocket(onTelemetryUpdate) {
-    if (onTelemetryUpdate) {
-      this.subscribers.add(onTelemetryUpdate);
-    }
-
-    if (this.ws && (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)) {
-      return;
-    }
-
+const API_BASE = import.meta.env?.VITE_API_URL || '/api/v1';
+export function websocketURL(location, apiBase = API_BASE) {
+  const url = new URL(apiBase, location.href);
+  url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+  url.pathname = '/ws'; url.search = ''; url.hash = '';
+  return url.toString();
+}
+export function connectTelemetry({ source, token = '', onMessage, onStatus, WebSocketImpl = globalThis.WebSocket,
+  url = websocketURL(window.location), retryMs = 3000 }) {
+  let socket;
+  let timer;
+  let stopped = false;
+  const retry = () => {
+    if (stopped || timer) return;
+    timer = setTimeout(() => { timer = null; open(); }, retryMs);
+  };
+  const open = () => {
+    if (stopped) return;
+    onStatus('connecting');
     try {
-      this.ws = new WebSocket(WS_BASE);
-
-      this.ws.onopen = () => {
-        console.log('[WS] Connected to SmartFeed IoT Hub');
-        this.isConnected = true;
-        if (this.reconnectTimer) {
-          clearTimeout(this.reconnectTimer);
-          this.reconnectTimer = null;
-        }
-      };
-
-      this.ws.onmessage = (event) => {
+      socket = new WebSocketImpl(url);
+      socket.onopen = () => socket.send(JSON.stringify({ type: 'SUBSCRIBE', source, token: source === 'measured' ? token : undefined }));
+      socket.onmessage = event => {
         try {
           const payload = JSON.parse(event.data);
-          for (const callback of this.subscribers) {
-            callback(payload);
-          }
-        } catch (err) {
-          console.error('[WS] Parse error:', err);
-        }
+          if (payload.source !== source) return;
+          onStatus('connected'); onMessage(payload);
+        } catch { onStatus('invalid response'); }
       };
-
-      this.ws.onclose = () => {
-        this.isConnected = false;
-        // Auto-reconnect after 3 seconds
-        if (!this.reconnectTimer) {
-          this.reconnectTimer = setTimeout(() => {
-            this.initWebSocket();
-          }, 3000);
-        }
+      socket.onclose = event => {
+        if (stopped) return;
+        if (event.code === 1008) { onStatus('authentication or subscription rejected'); return; }
+        onStatus('disconnected'); retry();
       };
-
-      this.ws.onerror = (err) => {
-        console.warn('[WS] Connection issue, using fallback:', err.message || 'offline');
-        this.isConnected = false;
-      };
-    } catch (e) {
-      console.warn('[WS] WebSocket unavailable:', e);
-      this.isConnected = false;
-    }
-  }
-
-  unsubscribe(callback) {
-    this.subscribers.delete(callback);
-  }
-
-  async getLatestSensors() {
-    try {
-      const res = await fetch(`${API_BASE}/sensors/latest`);
-      return await res.json();
-    } catch (e) {
-      console.warn('API fetch fallback to defaults');
-      return { success: false };
-    }
-  }
-
-  async getHistory(pitId = 'pit-a', limit = 25) {
-    try {
-      const res = await fetch(`${API_BASE}/sensors/history?pit=${pitId}&limit=${limit}`);
-      return await res.json();
-    } catch (e) {
-      return { success: false, history: [] };
-    }
-  }
-
-  async triggerAnomaly(pitId = 'pit-a', active = true) {
-    try {
-      const res = await fetch(`${API_BASE}/sensors/anomaly-trigger`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pitId, active })
-      });
-      return await res.json();
-    } catch (e) {
-      return { success: false };
-    }
-  }
-
-  async sendHardwareTelemetry(packet) {
-    try {
-      const res = await fetch(`${API_BASE}/sensors/telemetry`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(packet)
-      });
-      return await res.json();
-    } catch (e) {
-      return { success: false };
-    }
-  }
-
-  async analyzeImageSample(payload) {
-    try {
-      const res = await fetch(`${API_BASE}/vision/analyze-image`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      return await res.json();
-    } catch (e) {
-      return { success: false };
-    }
-  }
-
-  async optimizeRation(payload) {
-    try {
-      const res = await fetch(`${API_BASE}/ration/optimize`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      return await res.json();
-    } catch (e) {
-      return { success: false };
-    }
-  }
-
-  async getFirebaseConfig() {
-    try {
-      const res = await fetch(`${API_BASE}/config/firebase`);
-      return await res.json();
-    } catch (e) {
-      return null;
-    }
-  }
+      socket.onerror = () => { onStatus('disconnected'); socket.close(); };
+    } catch { onStatus('disconnected'); retry(); }
+  };
+  open();
+  return () => {
+    stopped = true; clearTimeout(timer);
+    if (socket) { socket.onopen = socket.onmessage = socket.onerror = socket.onclose = null; socket.close(); }
+  };
 }
-
-export const silageService = new SilageDataService();
+async function request(path, { body, token, signal } = {}) {
+  try {
+    const res = await fetch(`${API_BASE}${path}`, {
+      method: body === undefined ? 'GET' : 'POST',
+      headers: { ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}), ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      body: body === undefined ? undefined : JSON.stringify(body),
+      signal: signal ?? AbortSignal.timeout(10000),
+    });
+    const result = await res.json();
+    if (!res.ok) return { success: false, error: result.error || `Request failed (${res.status})` };
+    return result;
+  } catch (error) { return { success: false, error: error.name === 'AbortError' ? 'Request cancelled' : 'Server unavailable. No replacement readings have been generated.' }; }
+}
+export const silageService = {
+  getLatestSensors: (source, token, signal) => request(`/sensors/latest?source=${encodeURIComponent(source)}`, { token, signal }),
+  getHistory: (pit, source, token, signal) => request(`/sensors/history?pit=${encodeURIComponent(pit)}&source=${encodeURIComponent(source)}&limit=30`, { token, signal }),
+  triggerAnomaly: (pitId, active) => request('/sensors/anomaly-trigger', { body: { pitId, active } }),
+  sendSimulationTelemetry: body => request('/simulation/telemetry', { body }),
+  optimizeRation: body => request('/ration/optimize', { body }),
+};

@@ -30,3 +30,11 @@ lerna-debug.log*
 *.njsproj
 *.sln
 *.sw?
+
+# Runtime measurements and device secrets
+server/data/
+server/firmware/config.h
+device-credentials.json
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
