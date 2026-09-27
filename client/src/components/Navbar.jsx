@@ -66,7 +66,7 @@ export default function Navbar({
         {/* Brand & Ministry Title */}
         <div className="brand-section">
           <div className="brand-logo-glow">
-            <Activity size={24} />
+            <Sprout size={24} />
           </div>
           <div>
             <div className="brand-title">
@@ -101,6 +101,7 @@ export default function Navbar({
           {/* Farmer Friendly Simple View vs Lab Expert View */}
           <button 
             className={`btn-farmer-toggle ${farmerMode ? 'active' : ''}`}
+            aria-pressed={farmerMode}
             onClick={() => setFarmerMode(!farmerMode)}
             title="Toggle Farmer Friendly Simplified View"
           >
@@ -111,6 +112,7 @@ export default function Navbar({
           {/* Live ESP32 vs Simulation Mode Toggle */}
           <button 
             className="mode-toggle-pill"
+            aria-pressed={isLiveMode}
             onClick={() => setIsLiveMode(!isLiveMode)}
             title={isLiveMode ? t.toggleLive : t.toggleSim}
           >
@@ -122,6 +124,7 @@ export default function Navbar({
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
             <Globe size={16} color="var(--text-muted)" />
             <select 
+              aria-label="Interface language"
               className="lang-selector" 
               value={lang} 
               onChange={(e) => setLang(e.target.value)}
@@ -152,6 +155,7 @@ export default function Navbar({
               borderColor: 'var(--border-subtle)', 
               color: 'var(--text-main)' 
             }}
+            disabled={!activePitData}
             onClick={onOpenCertificate}
           >
             <FileText size={16} color="var(--accent-emerald)" />
@@ -161,13 +165,14 @@ export default function Navbar({
       </div>
 
       {/* Navigation Tabs */}
-      <nav className="nav-tabs-bar">
+      <nav className="nav-tabs-bar" aria-label="Main navigation">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
           return (
             <button
               key={item.id}
+              aria-current={isActive ? 'page' : undefined}
               className={`nav-tab-btn ${isActive ? 'active' : ''}`}
               onClick={() => setActiveTab(item.id)}
             >

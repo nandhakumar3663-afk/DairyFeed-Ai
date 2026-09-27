@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { TRANSLATIONS } from './translations';
 import Navbar from './components/Navbar';
 import LiveTelemetry from './components/LiveTelemetry';
 import SilageAnalytics from './components/SilageAnalytics';
@@ -77,10 +78,12 @@ export default function App() {
     if (!res.success) setError(res.error);
   };
   return <div>
+    <a className="skip-link" href="#main-content">Skip to dashboard</a>
     <Navbar {...{ lang, setLang, theme, setTheme, farmerMode, setFarmerMode, activeTab, setActiveTab, isLiveMode, setIsLiveMode, isSpeaking, setIsSpeaking, activePitData }}
       onOpenCertificate={() => activePitData && setCertificate(structuredClone({ ...activePitData, stale: isStale }))} />
-    <main className="main-wrapper">
-      <div className="glass-panel notice" role="status">
+    <main id="main-content" className="main-wrapper" tabIndex={-1}>
+      <div className="page-heading"><div><span className="eyebrow">DAIRYFEED AI / WORKSPACE</span><h1>{(TRANSLATIONS[lang] || TRANSLATIONS.en).tabs[activeTab]}</h1><p>Understand your feed. Keep every reading in view.</p></div><span className="source-label">{isLiveMode ? "Measured data" : "Demo workspace"}</span></div>
+      <div className="glass-panel notice data-notice" role="status">
         <strong>{isLiveMode ? 'Measured sensor data' : 'Simulation — generated demonstration data'}</strong>
         <p>Experimental prototype. Nutrient estimates, quality scores and ration calculations are unvalidated. They do not establish feed safety or detect aflatoxins.</p>
         <p>Connection: {connection}{isStale ? ' · Readings are stale (no update within 30 seconds)' : ''}</p>
@@ -92,7 +95,7 @@ export default function App() {
         {token && <button className="btn-voice" type="button" onClick={() => { setToken(''); setTokenInput(''); setAllPits([]); setCertificate(null); }}>Disconnect and clear token</button>}
         <p>The token stays in memory for this page session. Device tokens belong on devices, not in this dashboard.</p>
       </form>}
-      {activeTab === 'overview' && <LiveTelemetry {...{ lang, allPits: visiblePits, history: history.filter(p => p.source === source), isLiveMode, isStale }} pitData={activePitData} selectedPitId={activeId || ''} setSelectedPitId={setSelectedPitId} onTriggerAnomaly={handleTriggerAnomaly} />}
+      {activeTab === 'overview' && <LiveTelemetry {...{ lang, farmerMode, allPits: visiblePits, history: history.filter(p => p.source === source), isLiveMode, isStale }} pitData={activePitData} selectedPitId={activeId || ''} setSelectedPitId={setSelectedPitId} onTriggerAnomaly={handleTriggerAnomaly} />}
       {activeTab === 'analytics' && (activePitData?.inference && !isStale ? <SilageAnalytics lang={lang} activePitData={activePitData} /> : <div className="glass-panel notice">No complete, current sample is available for experimental analytics.</div>)}
       {activeTab === 'vision' && <VisualScanner lang={lang} />}
       {activeTab === 'ration' && <RationBalancer activePitData={isStale ? null : activePitData} />}
