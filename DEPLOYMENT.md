@@ -2,7 +2,7 @@
 
 Use the root `render.yaml` Blueprint to create one Node web service with a **1 GB persistent disk**.
 The React app, REST API and WebSocket are served from the same HTTPS hostname. No separate
-frontend service is needed. The old static-only Pages workflow now runs validation instead.
+frontend service is needed. The GitHub Pages workflow also publishes a static interface preview after validation.
 
 ## Configuration
 
@@ -37,3 +37,14 @@ and changes deployment availability; a single instance can have a short restart 
 
 A committed Blueprint is a deployment configuration, **not proof of a live deployment**.
 A successful Render deployment and its URL must be verified separately.
+
+## GitHub Pages interface
+
+Pushes to `main` validate the app and publish `client/dist` to GitHub Pages.
+In repository Settings → Pages, use GitHub Actions as the deployment source.
+Pages cannot run the Node API or WebSocket server. Without a backend, the page
+explicitly shows a dashboard preview and does not attempt telemetry connections.
+To connect a deployed backend, set the repository Actions variable `VITE_API_URL`
+to its HTTPS API base (ending in `/api/v1`) and rerun the workflow. Configure the
+backend `PUBLIC_ORIGIN` to include the Pages origin. Never put tokens in this
+public build variable. The same-origin Render deployment remains supported.
