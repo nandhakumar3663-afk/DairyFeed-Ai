@@ -1,141 +1,130 @@
+# DairyFeed — experimental sensor monitoring
 
-# 🌱 SMART FEED & SILAGE QUALITY ANALYZER
-### Smart AI-Enabled Rapid Feed and Silage Quality Testing System for Dairy Farmers
-**Domain:** Precision Dairy Nutrition & Quality Assurance  
-**Category:** Production AI + IoT Multi-Sensor Platform
+DairyFeed is a React dashboard and Node.js gateway for silage sensor telemetry.
+**It is an unvalidated prototype, not a laboratory testing service, feed-safety
+certificate, aflatoxin detector or accredited nutrition recommendation system.**
 
----
+## What works
 
-## 📌 Executive Summary
-High-quality cattle feed and silage are the backbone of sustainable dairy farming in India. Silage spoilage, mold/aflatoxins, and improper chop length cause a **20% to 30% drop in milk yield, metabolic acidosis (SARA), and reproductive loss**, costing dairy farmers thousands of rupees every season. 
+- Explicitly separated **measured** and **simulated** sources. Measurements are never
+  modified by the simulator or replaced by browser-generated values during an outage.
+- Device bearer authentication with per-device authorized pit IDs; a separate dashboard
+  token protects measurement reads and WebSocket subscriptions.
+- Strict field/type/range validation before mutation. Missing optional sensors remain missing.
+- SQLite transactions, WAL persistence and at most 10,000 readings per location.
+- Stale-data labels after 30 seconds without a measurement; source-labelled frozen printable reports.
+- One shared browser/API ration calculation with intake limits, infeasibility warnings,
+  editable assumed ingredient prices and optional real comparison costs. Negative savings are retained.
+- Same-host serving of frontend, API and authenticated WebSocket; reconnect retries and cleanup.
+- Automated regression tests and a Render deployment blueprint with persistent disk storage.
 
-Traditional laboratory chemical testing (Kjeldahl digestion, bomb calorimetry) requires **5 to 10 days** and costs **₹1,500 - ₹3,000 per sample**, making routine testing inaccessible to smallholder farmers.
+## What does not work as a real measurement
 
-**Smart Feed & Silage Quality Analyzer** is an end-to-end AI + IoT precision dairy nutrition platform that provides **sub-second rapid quality inference** using multi-sensor probe telemetry, 6-band optical Near-Infrared (NIR) reflectance, and computer vision.
+Nutrition, fermentation and spoilage indicators are handwritten experimental formulas.
+Their outputs are unvalidated estimates, not measured nutrient/toxin concentrations.
+Image upload is **preview only**. The image-analysis API returns HTTP 501. There is no
+trained model, image-based particle sizing, mold diagnosis, lab accreditation, digital
+certificate verification, cooperative payment processing or SMS delivery.
 
----
+The firmware sends measured core temperature and optional headspace humidity only.
+It omits failed and uncalibrated channels. Headspace humidity is not feed moisture.
+The sensor sketch has not been compiled or tested on physical ESP32 hardware.
+See [firmware setup](server/firmware/README.md).
 
-## 🚀 Key Modules & Capabilities
+## Local setup
 
-### 1. Real-Time IoT Telemetry & Hardware Dual-Mode
-- **Hardware Integration:** Production ESP32 firmware node connects to:
-  - **DS18B20 1-Wire Digital Probe Array:** Multi-depth core, surface, and base silo temperature monitoring.
-  - **DFRobot Industrial Analog pH Probe:** Direct silage fermentation acidity testing.
-  - **DHT22 / SHT31 Sensor:** Headspace relative humidity and moisture content.
-  - **MQ-135 Gas Sensor:** Ammonia ($NH_3$) and volatile organic compound (VOC) emissions for proteolysis detection.
-  - **AS7262 6-Band Visible-NIR Sensor:** Optical spectrometry across 450nm - 650nm wavelengths.
-- **Dual Mode Toggle:** Seamlessly toggle between **Live ESP32 Hardware Stream** and high-fidelity **Simulation Mode**.
-- **Early Warning Aerobic Spoilage Simulation:** Demonstrates how air leaks trigger instant heat accumulation ($>36^\circ\text{C}$) and butyric spoilage before total silo loss occurs.
+Requires Node **22.22.1 or newer** with `node:sqlite` support. SQLite may emit an experimental warning on Node 22.
 
-### 2. AI Fermentation & Nutritional Proximate Matrix
-- **Flieg's Silage Fermentation Score (0-100):** Evaluates lactic acid vs butyric acid fermentation quality according to ICAR and DLG standards.
-- **Rapid Nutritional Inference:**
-  - Dry Matter (DM %)
-  - Crude Protein (CP %)
-  - Total Digestible Nutrients (TDN %)
-  - Acid Detergent Fiber (ADF %) & Neutral Detergent Fiber (NDF %)
-  - Net Energy for Lactation ($NE_L$ Mcal/kg)
-  - Mold & Aflatoxin B1 Hazard Risk Index (%)
-
-### 3. AI Computer Vision & Penn State Particle Sieve (PSPS)
-- Analyzes forage cut length and physical effective NDF (peNDF) to prevent Sub-Acute Ruminal Acidosis (SARA):
-  - Upper Sieve (> 19 mm)
-  - Middle Sieve (8 - 19 mm)
-  - Lower Sieve (1.18 - 8 mm)
-  - Bottom Pan (< 1.18 mm fines)
-- Computer vision detection of fungal mold hyphae (*Aspergillus* / *Penicillium*).
-
-### 4. ICAR-Compliant Dairy Cattle Ration Balancer
-- Matches cow/buffalo breed (Indigenous Gir/Sahiwal, Crossbred HF/Jersey, Murrah Buffalo), body weight, and milk yield with tested silage composition.
-- Formulates optimal daily feeding (Silage + Green Fodder + Dry Straw + Compound Concentrate + Minerals + Water).
-- **Economic Impact:** Saves ₹15 - ₹35 per cow/day by eliminating concentrate feed over-purchase (up to ₹54,000 - ₹1,20,000/year for a 10-cow herd).
-
-### 5. Multilingual Accessibility & Voice AI Assistant
-- Supports **English, हिन्दी (Hindi), தமிழ் (Tamil), ਪੰਜਾਬੀ (Punjabi), and मराठी (Marathi)**.
-- Integrated Web Speech API audio advisory for rural dairy farmers.
-- One-click WhatsApp / SMS ration plan sharing.
-
-### 6. Dairy Cooperative Union & NDDB Procurement Portal
-- Village Milk Producers Cooperative Society (MPCS) fleet monitoring.
-- Silage quality ranking and milk procurement incentive disbursement (+₹1.50/L bonus).
-
-### 7. Official Lab-Grade Certificate of Analysis (PDF)
-- Generate, view, and print/save standard testing certificates with QR code verification and ICAR benchmark comparisons.
-
----
-
-## 🛠️ Project Architecture
-
-```
-DairyFeed-Ai/
-├── dev-runner.js                # Concurrent runner for server & client
-├── package.json                 # Root orchestration package
-├── server/                      # Node.js Express + WebSocket IoT Hub
-│   ├── server.js                # REST API & WebSocket broadcast server (:5001)
-│   ├── firmware/
-│   │   └── esp32_silage_node.ino # Complete Arduino C++ firmware sketch
-│   └── services/
-│       ├── silageAnalytics.js   # Flieg score & proximate regression models
-│       ├── rationOptimizer.js   # ICAR cattle nutrient balancing algorithm
-│       ├── visionClassifier.js  # Penn State Particle Separator classifier
-│       └── telemetrySimulator.js# Sensor kinetics & microbial heating simulator
-└── client/                      # React + Vite Frontend (:3000)
-    ├── src/
-    │   ├── App.jsx              # Main dashboard application
-    │   ├── index.css            # Dark glassmorphic design system
-    │   ├── translations.js      # English, Hindi, Tamil, Punjabi, Marathi
-    │   ├── components/
-    │   │   ├── Navbar.jsx
-    │   │   ├── LiveTelemetry.jsx
-    │   │   ├── SilageAnalytics.jsx
-    │   │   ├── VisualScanner.jsx
-    │   │   ├── RationBalancer.jsx
-    │   │   ├── SiloFleetManager.jsx
-    │   │   ├── CooperativePortal.jsx
-    │   │   ├── HardwareDocs.jsx
-    │   │   └── CertificateModal.jsx
-    │   └── services/
-    │       ├── api.js           # REST & WebSocket client with auto-reconnect
-    │       ├── audioSpeech.js   # Vernacular voice advisory
-    │       └── simulator.js     # Client-side fallback kinetics engine
+```sh
+npm ci --prefix client
+npm ci --prefix server
+npm run dev
 ```
 
----
+Open http://localhost:3000. Simulation works without credentials. Measured routes are
+locked until credentials are configured. The dashboard never stores access tokens in localStorage.
 
-## ⚡ Quick Start Guide
+For measured data, copy `.env.example` to `.env`, replace both tokens with independently
+generated random values, and use two terminals:
 
-### 1. Install Dependencies
-```bash
-# In project root:
-npm install --prefix client
-npm install --prefix server
+```sh
+node --env-file=.env server/server.js
+npm --prefix client run dev
 ```
 
-### 2. Start Full-Stack Application
-```bash
-# Starts both Backend (:5001) and Frontend (:3000)
-node dev-runner.js
-```
-Open **http://localhost:3000** in your browser.
+Select **Measured data**, enter `DASHBOARD_TOKEN`, and connect. Configure the device with
+`DEVICE_TOKEN`, `DEVICE_ID`, `DEVICE_PIT_ID` and the HTTPS ingestion URL. Do not put device
+secrets into frontend build variables, source control, sample reports or shared URLs.
+The dashboard token grants all reads for this single-farm deployment; multi-farm accounts
+and tenant isolation are not implemented.
 
----
+For several devices set `DEVICE_CREDENTIALS_FILE` to an ignored JSON file:
 
-## 📡 Hardware REST & Telemetry Endpoints
-
-- `GET /api/v1/health` - Server health check & client count
-- `GET /api/v1/sensors/latest` - Latest readings across all silos
-- `GET /api/v1/sensors/history?pit=pit-a` - Chronological telemetry stream
-- `POST /api/v1/sensors/telemetry` - Real ESP32 JSON ingestion endpoint:
-  ```json
-  {
-    "deviceId": "ESP32-SILO-01",
-    "pitId": "pit-a",
-    "temperature_core": 25.4,
-    "ph_level": 4.02,
-    "moisture_pct": 65.5,
-    "ammonia_ppm": 15.2,
-    "nir_bands": [420, 510, 630, 710, 800, 890]
+```json
+{
+  "ESP32-SILO-01": {
+    "token": "REPLACE_WITH_AT_LEAST_32_RANDOM_CHARACTERS",
+    "pitIds": ["pit-a"]
   }
-  ```
-- `POST /api/v1/ration/optimize` - ICAR feed ration balancer
-- `GET /api/v1/config/firebase` - Firebase & MQTT broker deployment schema
+}
+```
+
+Credentials are read at startup. Restart after rotation; existing WebSocket sessions close.
+Only the deployment operator should have access to credentials and the SQLite volume.
+
+## API
+
+| Route | Authentication / behavior |
+| --- | --- |
+| `GET /api/v1/health` | Public, no sensitive data |
+| `GET /api/v1/sensors/latest?source=measured` | Dashboard bearer token |
+| `GET /api/v1/sensors/history?pit=pit-a&source=measured&limit=30` | Dashboard bearer token; limit 1–1000 |
+| Same reads with `source=simulated` | Public demonstration data only |
+| `POST /api/v1/sensors/telemetry` | Device bearer token; pit must be authorized |
+| `POST /api/v1/simulation/telemetry` | Demonstration data only; existing demo pits |
+| `POST /api/v1/sensors/anomaly-trigger` | Simulation only |
+| `POST /api/v1/analyze/manual-sample` | Validated input, explicitly unvalidated inference |
+| `POST /api/v1/ration/optimize` | Shared experimental formula; `silageQuality` required |
+| `POST /api/v1/vision/analyze-image` | 501: not implemented |
+
+A minimal measured packet is `{ "deviceId": "ESP32-SILO-01", "pitId": "pit-a", "temperature_core": 25.4 }`.
+Optional fields: `temperature_top`, `temperature_bottom`, `humidity_pct`, `ph_level`,
+`moisture_pct`, `ammonia_ppm`, `battery_pct`, `wifi_rssi`, `co2_ppm`, six numeric `nir_bands`.
+Unknown fields and non-finite, null, string or out-of-range readings are rejected.
+The server assigns receipt timestamps and source metadata. It does not merge old channels
+into a new packet. Complete experimental inference requires temperature, pH, feed moisture,
+ammonia and optical bands; missing any yields `inference: null`.
+
+Connect WebSocket at `/ws`, then send within five seconds:
+`{"type":"SUBSCRIBE","source":"measured","token":"YOUR_DASHBOARD_TOKEN"}`.
+No readings are sent before authentication. Simulation subscriptions omit the token.
+Use HTTPS/WSS in production; tokens never appear in WebSocket URLs.
+
+## Build, verification and deployment
+
+```sh
+npm run check
+npm run build
+npm start
+```
+
+The backend serves `client/dist` at http://localhost:5001. See [Render setup](DEPLOYMENT.md).
+A Dockerfile is also supplied; mount `/app/server/data` as persistent writable storage
+and configure both credentials. `NODE_ENV=production` refuses startup without them.
+
+The SQLite store is designed for one server instance on one persistent disk. It is not
+an HA database. Back up via SQLite's online backup API or stop the server before copying
+the database and associated WAL files. Monitor disk space and retained history: at one
+packet every five seconds, 10,000 readings is approximately 14 hours per pit. Archive
+externally if longer retention is required. Deleting a Render disk deletes its measurements.
+
+## Before any production-AI claim
+
+1. Collect consented, representative sample images and paired traceable laboratory results.
+2. Document sensor calibration, reference methods, sample provenance and measurement uncertainty.
+3. Validate nutrient models on held-out farms, seasons and crops; publish error and failure rates.
+4. Evaluate vision models against annotated reference data and physical particle-size measurements.
+5. Have qualified domain experts review assumptions, nutrition constraints and user-facing claims.
+6. Add multi-user authorization, backups/restore drills, audit trails and operational monitoring.
+
+Those steps are future scientific and operational work; this implementation does not claim they are complete.

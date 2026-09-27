@@ -68,7 +68,12 @@ class TelemetrySimulator {
     };
 
     // Pre-seed 30 minutes of historical readings
+    for (const pit of Object.values(this.pits)) pit.source = 'simulated';
     this.seedHistory();
+  }
+
+  sample(pit) {
+    return Object.fromEntries(['temperature_core', 'ph_level', 'moisture_pct', 'ammonia_ppm', 'nir_bands'].map(key => [key, pit[key]]));
   }
 
   seedHistory() {
@@ -85,7 +90,7 @@ class TelemetrySimulator {
           moisture_pct: Number((pit.moisture_pct + (Math.random() * 0.3 - 0.15)).toFixed(1)),
           ammonia_ppm: Number((pit.ammonia_ppm + (Math.random() * 1.0 - 0.5)).toFixed(1))
         };
-        const inference = inferNutritionalProfile(reading);
+        const inference = inferNutritionalProfile(this.sample(reading));
         this.history[pitId].push({ ...reading, inference });
       }
     }
@@ -131,7 +136,7 @@ class TelemetrySimulator {
         timestamp
       };
 
-      const inference = inferNutritionalProfile(reading);
+      const inference = inferNutritionalProfile(this.sample(reading));
       const fullTelemetry = { ...reading, inference };
 
       // Push to history
@@ -175,7 +180,7 @@ class TelemetrySimulator {
   getAllPits() {
     return Object.values(this.pits).map(pit => ({
       ...pit,
-      inference: inferNutritionalProfile(pit)
+      inference: inferNutritionalProfile(this.sample(pit))
     }));
   }
 
@@ -184,7 +189,7 @@ class TelemetrySimulator {
     return list.slice(-limit);
   }
 
-  ingestHardwareTelemetry(data) {
+  ingestSimulationTelemetry(data) {
     const pitId = data.pitId || 'pit-a';
     if (!this.pits[pitId]) {
       this.pits[pitId] = {
@@ -195,10 +200,10 @@ class TelemetrySimulator {
       this.history[pitId] = [];
     }
 
-    Object.assign(this.pits[pitId], data);
+    Object.assign(this.pits[pitId], data, { source: 'simulated' });
     const timestamp = new Date().toISOString();
     const reading = { ...this.pits[pitId], timestamp };
-    const inference = inferNutritionalProfile(reading);
+    const inference = inferNutritionalProfile(this.sample(reading));
     const fullTelemetry = { ...reading, inference };
 
     this.history[pitId].push(fullTelemetry);
@@ -208,4 +213,4 @@ class TelemetrySimulator {
   }
 }
 
-module.exports = new TelemetrySimulator();
+module.exports = { TelemetrySimulator };

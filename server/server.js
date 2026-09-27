@@ -1,231 +1,180 @@
-/**
- * Smart Feed & Silage Quality Analyzer - Backend Gateway & AI Server
- * Ministry of Fisheries, Animal Husbandry & Dairying • Precision Cattle Nutrition
- */
-
 const express = require('express');
-const http = require('http');
+const http = require('node:http');
+const path = require('node:path');
+const fs = require('node:fs');
+const crypto = require('node:crypto');
 const cors = require('cors');
 const { WebSocketServer, WebSocket } = require('ws');
-
-const simulator = require('./services/telemetrySimulator');
-const { inferNutritionalProfile } = require('./services/silageAnalytics');
+const { TelemetrySimulator } = require('./services/telemetrySimulator');
+const { TelemetryStore } = require('./services/telemetryStore');
 const { optimizeRation } = require('./services/rationOptimizer');
-const { analyzeSilageImage } = require('./services/visionClassifier');
+const { inferNutritionalProfile } = require('./services/silageAnalytics');
+const { validateTelemetry, object, identifier, choice, ValidationError } = require('../shared/validation.mjs');
 
-const app = express();
-const PORT = process.env.PORT || 5001;
-
-// Middlewares
-app.use(cors({ origin: '*' }));
-app.use(express.json({ limit: '10mb' }));
-
-// Create HTTP and WebSocket server
-const server = http.createServer(app);
-const wss = new WebSocketServer({ server });
-
-// Active WebSocket connections
-const clients = new Set();
-
-wss.on('connection', (ws) => {
-  clients.add(ws);
-  console.log(`[WebSocket] Client connected. Total clients: ${clients.size}`);
-
-  // Send initial snapshot of all pits
-  ws.send(JSON.stringify({
-    type: 'INITIAL_STATE',
-    data: simulator.getAllPits(),
-    timestamp: new Date().toISOString()
-  }));
-
-  ws.on('message', (message) => {
-    try {
-      const parsed = JSON.parse(message);
-      if (parsed.type === 'TRIGGER_ANOMALY') {
-        const updated = simulator.triggerAnomaly(parsed.pitId, parsed.active);
-        broadcast({
-          type: 'ANOMALY_STATUS',
-          pitId: parsed.pitId,
-          active: parsed.active,
-          data: updated
-        });
-      } else if (parsed.type === 'PING') {
-        ws.send(JSON.stringify({ type: 'PONG', timestamp: Date.now() }));
-      }
-    } catch (err) {
-      console.error('[WebSocket] Message parse error:', err.message);
-    }
-  });
-
-  ws.on('close', () => {
-    clients.delete(ws);
-    console.log(`[WebSocket] Client disconnected. Total clients: ${clients.size}`);
-  });
-});
-
-function broadcast(payload) {
-  const json = JSON.stringify(payload);
-  for (const client of clients) {
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(json);
-    }
-  }
+function matches(secret, supplied) {
+  if (!secret || typeof supplied !== 'string' || supplied.length > 512) return false;
+  return crypto.timingSafeEqual(crypto.createHash('sha256').update(secret).digest(), crypto.createHash('sha256').update(supplied).digest());
 }
-
-// Background simulation ticker: emit live telemetry update every 3 seconds
-setInterval(() => {
-  const updates = simulator.tick();
-  broadcast({
-    type: 'TELEMETRY_BATCH',
-    data: updates,
-    timestamp: new Date().toISOString()
-  });
-}, 3000);
-
-// ================= REST API ROUTES =================
-
-// Health Check
-app.get('/api/v1/health', (req, res) => {
-  res.json({
-    status: 'healthy',
-    system: 'Smart Feed & Silage Quality Analyzer',
-    platformVersion: '1.0.0-PROD',
-    timestamp: new Date().toISOString(),
-    connectedClients: clients.size
-  });
-});
-
-// Get Latest Telemetry for All Pits
-app.get('/api/v1/sensors/latest', (req, res) => {
-  res.json({
-    success: true,
-    data: simulator.getAllPits()
-  });
-});
-
-// Get Chronological History for Charting
-app.get('/api/v1/sensors/history', (req, res) => {
-  const pitId = req.query.pit || 'pit-a';
-  const limit = parseInt(req.query.limit) || 30;
-  const history = simulator.getHistory(pitId, limit);
-  res.json({
-    success: true,
-    pitId,
-    count: history.length,
-    history
-  });
-});
-
-// Real ESP32 Hardware Telemetry Ingestion Endpoint
-// Real ESP32 microcontrollers POST their sensor data here!
-app.post('/api/v1/sensors/telemetry', (req, res) => {
-  const { deviceId, pitId, temperature_core, ph_level, moisture_pct, ammonia_ppm, nir_bands } = req.body;
-
-  if (!deviceId || ph_level === undefined || moisture_pct === undefined) {
-    return res.status(400).json({
-      error: 'Invalid telemetry schema. Required: deviceId, ph_level, moisture_pct'
-    });
+function readCredentials(filename) {
+  const credentials = filename
+    ? object(JSON.parse(fs.readFileSync(filename, 'utf8')), 'Device credentials')
+    : process.env.DEVICE_TOKEN
+      ? { [process.env.DEVICE_ID || 'ESP32-SILO-01']: { token: process.env.DEVICE_TOKEN, pitIds: [process.env.DEVICE_PIT_ID || 'pit-a'] } }
+      : {};
+  for (const [id, entry] of Object.entries(credentials)) {
+    identifier(id, 'Configured device ID'); object(entry);
+    if (typeof entry.token !== 'string' || entry.token.length < 32) throw new Error('Device tokens must contain at least 32 characters');
+    if (!Array.isArray(entry.pitIds) || !entry.pitIds.length) throw new Error('Each device requires authorized pitIds');
+    entry.pitIds.forEach(pit => identifier(pit, 'Configured pit ID'));
   }
-
-  const processed = simulator.ingestHardwareTelemetry(req.body);
-
-  // Broadcast to all active browser dashboards in real-time!
-  broadcast({
-    type: 'HARDWARE_TELEMETRY',
-    deviceId,
-    pitId: pitId || 'pit-a',
-    data: processed,
-    timestamp: new Date().toISOString()
+  return credentials;
+}
+function createApplication(options = {}) {
+  const dashboardToken = options.dashboardToken ?? process.env.DASHBOARD_TOKEN ?? '';
+  const devices = options.devices ?? readCredentials(process.env.DEVICE_CREDENTIALS_FILE);
+  if (dashboardToken && dashboardToken.length < 32) throw new Error('DASHBOARD_TOKEN must contain at least 32 characters');
+  if (process.env.NODE_ENV === 'production' && (!dashboardToken || !Object.keys(devices).length)) throw new Error('Production requires dashboard and device credentials');
+  const allowedOrigins = options.allowedOrigins ?? (process.env.PUBLIC_ORIGIN || process.env.RENDER_EXTERNAL_URL || 'http://localhost:3000,http://localhost:5001,http://127.0.0.1:5001').split(',');
+  const store = new TelemetryStore(options.databasePath ?? process.env.DATABASE_PATH ?? path.join(__dirname, 'data', 'telemetry.sqlite'));
+  const simulator = new TelemetrySimulator();
+  const app = express();
+  app.disable('x-powered-by');
+  app.use(cors({ origin(origin, callback) { callback(null, !origin || allowedOrigins.includes(origin)); } }));
+  app.use((req, res, next) => {
+    res.set('X-Content-Type-Options', 'nosniff');
+    res.set('Referrer-Policy', 'no-referrer');
+    if (req.path.startsWith('/api/')) res.set('Cache-Control', 'no-store');
+    next();
   });
-
-  console.log(`[Hardware Ingest] Received telemetry from ${deviceId} for pit ${pitId || 'pit-a'}`);
-
-  res.status(201).json({
-    success: true,
-    message: 'Telemetry ingested and broadcasted successfully',
-    inference: processed.inference
+  // Bound unauthenticated traffic as well as authenticated requests. Single-process deployment.
+  const rates = new Map();
+  app.use('/api', (req, res, next) => {
+    const now = Date.now();
+    for (const [ip, bucket] of rates) if (bucket.until < now) rates.delete(ip);
+    const ip = req.socket.remoteAddress;
+    if (!rates.has(ip)) {
+      if (rates.size >= 10000) return res.status(503).json({ success: false, error: 'Request capacity reached' });
+      rates.set(ip, { count: 0, until: now + 60000 });
+    }
+    if (++rates.get(ip).count > 300) return res.status(429).json({ success: false, error: 'Too many requests; retry in one minute' });
+    next();
   });
-});
-
-// Trigger Anomaly Simulation (e.g. Aerobic Spoilage, Air leak)
-app.post('/api/v1/sensors/anomaly-trigger', (req, res) => {
-  const { pitId = 'pit-a', active = true } = req.body;
-  const result = simulator.triggerAnomaly(pitId, active);
-  
-  broadcast({
-    type: 'ANOMALY_STATUS',
-    pitId,
-    active,
-    data: result
+  app.use(express.json({ limit: '32kb' }));
+  const server = http.createServer(app);
+  server.requestTimeout = 15000;
+  const wss = new WebSocketServer({ noServer: true, maxPayload: 4096 });
+  const clients = new Map();
+  const bearer = req => req.headers.authorization?.startsWith('Bearer ') ? req.headers.authorization.slice(7) : '';
+  function dashboard(req, res, next) {
+    if (!matches(dashboardToken, bearer(req))) return res.status(401).json({ success: false, error: 'Dashboard authentication required' });
+    next();
+  }
+  function source(req) { return choice(req.query.source ?? 'measured', 'source', ['measured', 'simulated']); }
+  function authorizeSource(req, res, next) { if (source(req) === 'measured') return dashboard(req, res, next); next(); }
+  function broadcast(message, targetSource) {
+    for (const [ws, subscription] of clients) {
+      if (subscription !== targetSource || ws.readyState !== WebSocket.OPEN) continue;
+      if (ws.bufferedAmount > 1024 * 1024) { ws.terminate(); continue; }
+      ws.send(JSON.stringify({ ...message, source: targetSource }));
+    }
+  }
+  server.on('upgrade', (req, socket, head) => {
+    if (req.url !== '/ws' || wss.clients.size >= 200 || (req.headers.origin && !allowedOrigins.includes(req.headers.origin))) {
+      socket.end('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n'); return;
+    }
+    wss.handleUpgrade(req, socket, head, ws => wss.emit('connection', ws));
   });
-
-  res.json({
-    success: true,
-    pitId,
-    active,
-    status: result ? result.status : 'unknown'
+  wss.on('connection', ws => {
+    let subscribed = false;
+    let alive = true;
+    const timeout = setTimeout(() => ws.close(1008, 'Subscription required'), 5000);
+    ws.on('pong', () => { alive = true; });
+    ws.checkAlive = () => { if (!alive) return ws.terminate(); alive = false; ws.ping(); };
+    ws.on('error', () => {});
+    ws.on('message', raw => {
+      try {
+        if (subscribed) throw new ValidationError('Already subscribed');
+        const message = object(JSON.parse(raw));
+        if (message.type !== 'SUBSCRIBE') throw new ValidationError('SUBSCRIBE required');
+        const target = choice(message.source, 'source', ['measured', 'simulated']);
+        if (target === 'measured' && !matches(dashboardToken, message.token)) { ws.close(1008, 'Unauthorized'); return; }
+        subscribed = true; clearTimeout(timeout); clients.set(ws, target);
+        ws.send(JSON.stringify({ type: 'INITIAL_STATE', source: target, data: target === 'measured' ? store.latest() : simulator.getAllPits() }));
+      } catch { ws.close(1008, 'Invalid subscription'); }
+    });
+    ws.on('close', () => { clearTimeout(timeout); clients.delete(ws); });
   });
-});
+  const ticker = setInterval(() => {
+    try { broadcast({ type: 'TELEMETRY_BATCH', data: simulator.tick() }, 'simulated'); }
+    catch (error) { console.error('Simulation tick failed:', error.message); }
+  }, options.tickMs ?? 3000);
+  const heartbeat = setInterval(() => { for (const ws of wss.clients) ws.checkAlive(); }, 15000);
 
-// Manual Lab Sample Analysis
-app.post('/api/v1/analyze/manual-sample', (req, res) => {
-  const inference = inferNutritionalProfile(req.body);
-  res.json({
-    success: true,
-    sampleData: req.body,
-    inference
+  app.get('/api/v1/health', (_req, res) => res.json({ status: 'healthy', platformVersion: '2.0.0-prototype', storage: 'sqlite', inferenceValidated: false }));
+  app.get('/api/v1/sensors/latest', authorizeSource, (req, res) => res.json({ success: true, source: source(req), data: source(req) === 'measured' ? store.latest() : simulator.getAllPits() }));
+  app.get('/api/v1/sensors/history', authorizeSource, (req, res) => {
+    const pit = identifier(req.query.pit, 'pit');
+    const limit = Number(req.query.limit ?? 30);
+    if (!Number.isInteger(limit) || limit < 1 || limit > 1000) throw new ValidationError('limit must be an integer from 1 to 1000');
+    const history = source(req) === 'measured' ? store.history(pit, limit) : simulator.getHistory(pit, limit);
+    res.json({ success: true, source: source(req), pitId: pit, count: history.length, history });
   });
-});
-
-// Silage Image Vision Inspection & Penn State Particle Separator analysis
-app.post('/api/v1/vision/analyze-image', (req, res) => {
-  const analysis = analyzeSilageImage(req.body);
-  res.json({
-    success: true,
-    analysis
+  app.post('/api/v1/sensors/telemetry', (req, res) => {
+    const body = object(req.body);
+    const id = identifier(body.deviceId, 'deviceId');
+    const credential = Object.hasOwn(devices, id) ? devices[id] : null;
+    if (!credential || !matches(credential.token, bearer(req))) return res.status(401).json({ success: false, error: 'Device authentication required' });
+    const data = validateTelemetry(body);
+    if (!credential.pitIds.includes(data.pitId)) return res.status(403).json({ success: false, error: 'Device is not authorized for this pit' });
+    const processed = store.ingest(data);
+    broadcast({ type: 'HARDWARE_TELEMETRY', pitId: data.pitId, data: processed }, 'measured');
+    res.status(201).json({ success: true, data: processed });
   });
-});
-
-// ICAR-Compliant Ration Balancer
-app.post('/api/v1/ration/optimize', (req, res) => {
-  const optimization = optimizeRation(req.body);
-  res.json({
-    success: true,
-    optimization
+  app.post('/api/v1/simulation/telemetry', (req, res) => {
+    const data = validateTelemetry(req.body);
+    if (!Object.hasOwn(simulator.pits, data.pitId)) throw new ValidationError('Use an existing demonstration pit');
+    validateTelemetry(simulator.sample(data), { sample: true });
+    const result = simulator.ingestSimulationTelemetry(data);
+    broadcast({ type: 'TELEMETRY_BATCH', data: simulator.getAllPits() }, 'simulated');
+    res.status(201).json({ success: true, source: 'simulated', data: result });
   });
-});
-
-// Firebase / MQTT Configuration Schema
-app.get('/api/v1/config/firebase', (req, res) => {
-  res.json({
-    platform: 'SmartFeed AI Cloud Gateway',
-    firebase: {
-      authDomain: 'dairyfeed-ai-gateway.firebaseapp.com',
-      databaseURL: 'https://dairyfeed-ai-gateway-default-rtdb.asia-southeast1.firebasedatabase.app',
-      projectId: 'dairyfeed-ai-gateway',
-      storageBucket: 'dairyfeed-ai-gateway.appspot.com',
-      realtimePath: '/telemetry/esp32_nodes/{deviceId}'
-    },
-    mqtt: {
-      broker: 'broker.emqx.io (or private AWS/HiveMQ broker)',
-      port: 8883,
-      topicTemplate: 'dairy/telemetry/farms/{farmId}/silos/{pitId}',
-      qos: 1
-    },
-    supportedSensors: [
-      { name: 'DS18B20 Multi-Depth Temperature Probe', protocol: '1-Wire (GPIO 4)' },
-      { name: 'Analog pH Probe (DFRobot)', protocol: 'ADC (GPIO 34)' },
-      { name: 'DHT22 / SHT31 Headspace Humidity', protocol: 'Digital (GPIO 15)' },
-      { name: 'MQ-135 Ammonia & VOC Gas Sensor', protocol: 'ADC (GPIO 35)' },
-      { name: 'AS7262 6-Channel Visible NIR Spectrometer', protocol: 'I2C (GPIO 21, 22)' }
-    ]
+  app.post('/api/v1/sensors/anomaly-trigger', (req, res) => {
+    const { pitId, active } = object(req.body);
+    identifier(pitId, 'pitId');
+    if (typeof active !== 'boolean' || !Object.hasOwn(simulator.pits, pitId)) throw new ValidationError('Existing simulation pit and boolean active required');
+    simulator.triggerAnomaly(pitId, active);
+    broadcast({ type: 'TELEMETRY_BATCH', data: simulator.getAllPits() }, 'simulated');
+    res.json({ success: true, source: 'simulated' });
   });
-});
-
-server.listen(PORT, () => {
-  console.log(`\n=====================================================`);
-  console.log(`🚀 Smart Feed & Silage Quality Analyzer Backend (Production)`);
-  console.log(`📡 HTTP Server listening on http://localhost:${PORT}`);
-  console.log(`⚡ WebSocket Server active on ws://localhost:${PORT}`);
-  console.log(`=====================================================\n`);
-});
+  app.post('/api/v1/analyze/manual-sample', (req, res) => {
+    const sample = validateTelemetry(req.body, { sample: true });
+    res.json({ success: true, source: 'manual', inference: inferNutritionalProfile(sample) });
+  });
+  app.post('/api/v1/vision/analyze-image', (_req, res) => res.status(501).json({ success: false, validated: false, error: 'Real image analysis is not implemented. Image previews and examples are not measurements.' }));
+  app.post('/api/v1/ration/optimize', (req, res) => res.json({ success: true, optimization: optimizeRation(req.body) }));
+  app.use('/api', (_req, res) => res.status(404).json({ success: false, error: 'Unknown API route' }));
+  const clientPath = path.resolve(__dirname, '../client/dist');
+  if (fs.existsSync(clientPath)) {
+    app.use(express.static(clientPath));
+    app.get('*', (_req, res) => res.sendFile(path.join(clientPath, 'index.html')));
+  }
+  app.use((error, _req, res, _next) => {
+    const status = error.status >= 400 && error.status < 500 ? error.status : 500;
+    if (status === 500) console.error('Request failed:', error.message);
+    res.status(status).json({ success: false, error: status === 500 ? 'Internal server error' : error.message });
+  });
+  async function close() {
+    clearInterval(ticker); clearInterval(heartbeat);
+    for (const ws of wss.clients) ws.terminate();
+    await new Promise(resolve => wss.close(resolve));
+    if (server.listening) await new Promise(resolve => server.close(resolve));
+    store.close();
+  }
+  return { app, server, close };
+}
+if (require.main === module) {
+  const instance = createApplication();
+  instance.server.listen(process.env.PORT || 5001, '0.0.0.0', () => console.log('DairyFeed prototype server listening'));
+  for (const signal of ['SIGTERM', 'SIGINT']) process.once(signal, () => instance.close().then(() => process.exit(0)));
+}
+module.exports = { createApplication };

@@ -1,0 +1,30 @@
+# Paid service + 1 GB persistent disk. Review Render's current price before creation.
+services:
+  - type: web
+    name: dairyfeed-measured
+    runtime: node
+    plan: 0.5c-512mb
+    numInstances: 1
+    buildCommand: npm ci --prefix client --include=dev && npm ci --prefix server && npm run check
+    startCommand: node server/server.js
+    healthCheckPath: /api/v1/health
+    autoDeployTrigger: off
+    disk:
+      name: telemetry
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_VERSION
+        value: 22.22.1
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_PATH
+        value: /var/data/telemetry.sqlite
+      - key: DASHBOARD_TOKEN
+        generateValue: true
+      - key: DEVICE_TOKEN
+        generateValue: true
+      - key: DEVICE_ID
+        value: ESP32-SILO-01
+      - key: DEVICE_PIT_ID
+        value: pit-a
